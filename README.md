@@ -1,6 +1,6 @@
-# DevLab_BMI323
+# DevLab_TEMT6000
 
-Arduino library for the Bosch BMI323 6-axis IMU using direct I2C register communication.
+Arduino library for the Bosch TEMT6000 using direct I2C register communication.
 
 This library provides a lightweight and reliable object-oriented interface for:
 
@@ -20,8 +20,8 @@ Compatible with ESP32, RP2040, and Arduino-compatible platforms.
 - Lightweight implementation
 - High-speed I2C communication
 - Supports custom I2C pins
-- Handles BMI323 dummy I2C bytes internally
-- Compatible with Bosch BMI323 devices
+- Handles TEMT6000 dummy I2C bytes internally
+- Compatible with Bosch TEMT6000 devices
 - Optimized for embedded systems and rapid prototyping
 
 ---
@@ -44,7 +44,7 @@ Compatible with ESP32, RP2040, and Arduino-compatible platforms.
 2. Go to:
 
 ```text
-Sketch -> Library Manager -> Search DevLab_BMI323...
+Sketch -> Library Manager -> Search DevLab_TEMT6000...
 ```
 
 3. Click on Install
@@ -56,13 +56,13 @@ Sketch -> Library Manager -> Search DevLab_BMI323...
 # Quick Start Example
 
 ```cpp
-#include <DevLab_BMI323.h>
+#include <DevLab_TEMT6000.h>
 
 #define SDA_PIN 1
 #define SCL_PIN 6
 
-DevLab_BMI323 imu(Wire, 0x69);
-BMI323_SensorData data;
+DevLab_TEMT6000 imu(Wire, 0x69);
+TEMT6000_SensorData data;
 
 void setup() {
 
@@ -70,7 +70,7 @@ void setup() {
 
   if (!imu.begin(SDA_PIN, SCL_PIN, 400000)) {
 
-    Serial.println("BMI323 initialization failed.");
+    Serial.println("TEMT6000 initialization failed.");
 
     while (1);
   }
@@ -111,7 +111,7 @@ void loop() {
 
 # Wiring Example
 
-| BMI323 | MCU |
+| TEMT6000 | MCU |
 |---|---|
 | SDA | SDA |
 | SCL | SCL |
@@ -137,9 +137,9 @@ void loop() {
 
 # Notes
 
-BMI323 I2C burst reads include 2 dummy bytes at the beginning of the transfer.
+TEMT6000 I2C burst reads include 2 dummy bytes at the beginning of the transfer.
 
-The DevLab_BMI323 library automatically handles those internally.
+The DevLab_TEMT6000 library automatically handles those internally.
 
 Current library version supports only I2C communication.
 
@@ -150,12 +150,12 @@ SPI support may be added in future releases.
 # Folder Structure
 
 ```text
-DevLab_BMI323/
+DevLab_TEMT6000/
 ├── examples/
 │   └── BasicRead/
 ├── src/
-│   ├── DevLab_BMI323.h
-│   └── DevLab_BMI323.cpp
+│   ├── DevLab_TEMT6000.h
+│   └── DevLab_TEMT6000.cpp
 ├── library.properties
 ├── README.md
 └── LICENSE
@@ -167,7 +167,7 @@ DevLab_BMI323/
 
 | Parameter | Value |
 |---|---|
-| Library Name | DevLab_BMI323 |
+| Library Name | DevLab_TEMT6000 |
 | Version | 1.0.0 |
 | Communication | I2C/SPI|
 | Architecture | Cross-platform |
