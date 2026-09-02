@@ -1,3 +1,10 @@
+/**
+ * @file sensorOledGraph.ino
+ * @brief Reads the TEMT6000 ADC0 value over I2C via DevLabDDP and plots a
+ *        live scrolling graph of the readings on an SSD1306 OLED display.
+ * @author Cesar Bautista
+ */
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
@@ -7,9 +14,9 @@
 
 // Both devices share the same I2C bus.
 #if defined(ARDUINO_ARCH_RP2040)
-  #define WIRE Wire1
-  constexpr uint8_t I2C_SDA = 12;
-  constexpr uint8_t I2C_SCL = 13;
+  #define WIRE Wire
+  constexpr uint8_t I2C_SDA = 24;
+  constexpr uint8_t I2C_SCL = 25;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define WIRE Wire
   constexpr uint8_t I2C_SDA = 6;
@@ -128,6 +135,9 @@ void setup()
 
   if (!devlabBeginI2cBusRecovered(WIRE, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
     Serial.println("Error: I2C bus is blocked");
+    while (true) {
+      delay(1000);
+    }
   }
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {

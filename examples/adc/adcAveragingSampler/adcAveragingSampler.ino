@@ -1,10 +1,28 @@
+/**
+ * @file adcAveragingSampler.ino
+ * @brief Configures the TEMT6000 DDP device's onboard ADC moving-average
+ *        window over I2C and streams the resulting averaged ADC0 readings
+ *        to Serial.
+ *
+ * On startup the sketch verifies the sensor's identity, requests an
+ * ADC_AVERAGING_SAMPLES-sample averaging window (CMD_SET_ADC_AVERAGING),
+ * confirms the window the firmware actually applied (CMD_GET_ADC_AVERAGING),
+ * and waits for that window to fill so the first reading is already a full
+ * average. The main loop then polls CMD_READ_ADC0 every READ_INTERVAL_MS and
+ * prints each raw averaged value as CSV to Serial.
+ *
+ * @author Cesar Bautista
+ * @date 2026-09-02
+ */
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
+#include <DevLabI2CBusRecovery.h>
 
 #if defined(ARDUINO_ARCH_RP2040)
-  #define I2C_BUS Wire1
-  constexpr uint8_t I2C_SDA = 12U, I2C_SCL = 13U;
+  #define I2C_BUS Wire
+  constexpr uint8_t I2C_SDA = 24U, I2C_SCL = 25U;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
@@ -12,6 +30,7 @@
   #error "Use ESP32 or RP2040/RP2350"
 #endif
 
+constexpr uint32_t I2C_FREQ = 400000;
 constexpr uint8_t SENSOR_ADDRESS = 0x20U;
 constexpr uint32_t READ_INTERVAL_MS = 100U;
 /* Device-side moving-average window (firmware only accepts 1, 4, 8, 16 or 24).
@@ -64,14 +83,11 @@ bool readAdc0(uint8_t address, uint16_t &value) {
 void setup() {
   Serial.begin(115200);
   delay(500);
-#if defined(ARDUINO_ARCH_RP2040)
-  I2C_BUS.setSDA(I2C_SDA);
-  I2C_BUS.setSCL(I2C_SCL);
-  I2C_BUS.begin();
-#else
-  I2C_BUS.begin(I2C_SDA, I2C_SCL);
-#endif
-  I2C_BUS.setClock(400000U);
+
+  if (!devlabBeginI2cBusRecovered(I2C_BUS, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+    Serial.println("ERROR: I2C bus is blocked");
+    return;
+  }
 
   DevLabDDP::DeviceInfo info;
   deviceVerified = master.matchesExpectedDevice(SENSOR_ADDRESS, &info);

@@ -1,10 +1,18 @@
+/**
+ * @file changeAddress.ino
+ * @brief Serial command tool to scan the I2C bus for DDP devices and
+ *        reassign a TEMT6000 device's I2C address.
+ * @author Cesar Bautista
+ */
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
+#include <DevLabI2CBusRecovery.h>
 
 #if defined(ARDUINO_ARCH_RP2040)
-  #define I2C_BUS Wire1
-  constexpr uint8_t I2C_SDA = 12U, I2C_SCL = 13U;
+  #define I2C_BUS Wire
+  constexpr uint8_t I2C_SDA = 24U, I2C_SCL = 25U;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
@@ -12,6 +20,7 @@
   #error "Use ESP32 or RP2040/RP2350"
 #endif
 
+constexpr uint32_t I2C_FREQ = 400000;     //Change to 100000 for slower devices
 constexpr uint16_t EXPECTED_DEVICE_ID = DevLabDDP::DEVICE_TEMT6000;
 DevLabDDP::Master master(I2C_BUS, EXPECTED_DEVICE_ID);
 String inputLine;
@@ -36,14 +45,15 @@ void scanBus() {
   bool found = false;
   Serial.println("Address  Sensor");
   for (uint8_t address = 0x08U; address <= 0x77U; ++address) {
-    if (!master.ping(address)) continue;
+    // DDP devices only ACK once a real command byte is written, so a
+    // zero-byte ping() alone can miss them; try identify() first.
+    DevLabDDP::DeviceInfo info;
+    bool isDdp = master.identify(address, info);
+    if (!isDdp && !master.ping(address)) continue;
     found = true;
     printHexAddress(address);
     Serial.print("     ");
-    DevLabDDP::DeviceInfo info;
-    Serial.println(master.identify(address, info)
-                       ? DevLabDDP::deviceName(info.deviceId)
-                       : "non-DDP");
+    Serial.println(isDdp ? DevLabDDP::deviceName(info.deviceId) : "non-DDP");
   }
   if (!found) Serial.println("--       none");
 }
@@ -92,7 +102,8 @@ void processCommand(String line) {
     Serial.println("ERROR current address does not contain the expected DDP device");
     return;
   }
-  if (master.ping(newAddress)) {
+  DevLabDDP::DeviceInfo unused;
+  if (master.ping(newAddress) || master.identify(newAddress, unused)) {
     Serial.println("ERROR new address is already in use");
     return;
   }
@@ -116,19 +127,21 @@ void processCommand(String line) {
 
 void setup() {
   Serial.begin(115200);
+  while (!Serial) {
+    delay(10);
+  }
   delay(500);
 
-#if defined(ARDUINO_ARCH_RP2040)
-  I2C_BUS.setSDA(I2C_SDA);
-  I2C_BUS.setSCL(I2C_SCL);
-  I2C_BUS.begin();
-#else
-  I2C_BUS.begin(I2C_SDA, I2C_SCL);
-#endif
-  I2C_BUS.setClock(400000U);
+  if (!devlabBeginI2cBusRecovered(I2C_BUS, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+    Serial.println("ERROR: I2C bus is blocked");
+    while (true) {
+      delay(1000);
+    }
+  }
 
   Serial.print("Expected DDP device ID: 0x");
   Serial.println(EXPECTED_DEVICE_ID, HEX);
+
   printHelp();
   scanBus();
 }

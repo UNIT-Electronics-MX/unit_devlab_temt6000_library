@@ -1,3 +1,11 @@
+/**
+ * @file temt6000WebGraph.ino
+ * @brief Hosts a WiFi access point with a live web dashboard that graphs
+ *        the TEMT6000 DDP device's ADC0 readings, served over a small
+ *        onboard HTTP API.
+ * @author Cesar Bautista
+ */
+
 #include <Arduino.h>
 #include <WebServer.h>
 #include <WiFi.h>
@@ -241,14 +249,15 @@ void setup()
   Serial.begin(115200);
   delay(500);
 
-  if (!devlabBeginI2cBusRecovered(
-          I2C_BUS, I2C_SDA_PIN, I2C_SCL_PIN,
-          I2C_FREQUENCY_HZ, 100)) {
+  bool i2cBusOk = devlabBeginI2cBusRecovered(
+      I2C_BUS, I2C_SDA_PIN, I2C_SCL_PIN,
+      I2C_FREQUENCY_HZ, 100);
+  if (!i2cBusOk) {
     Serial.println("Error: I2C bus is blocked");
   }
 
   DevLabDDP::DeviceInfo info;
-  deviceVerified = master.matchesExpectedDevice(STARTUP_I2C_ADDRESS, &info);
+  deviceVerified = i2cBusOk && master.matchesExpectedDevice(STARTUP_I2C_ADDRESS, &info);
   if (!deviceVerified) {
     Serial.println("Error: address is not a DDP TEMT6000 (ID 0x0102)");
   }

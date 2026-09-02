@@ -1,10 +1,18 @@
+/**
+ * @file singleSensor.ino
+ * @brief Verifies a single TEMT6000 DDP device on the I2C bus and prints
+ *        its raw ADC0 readings over Serial at a fixed interval.
+ * @author Cesar Bautista
+ */
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
+#include <DevLabI2CBusRecovery.h>
 
 #if defined(ARDUINO_ARCH_RP2040)
-  #define I2C_BUS Wire1
-  constexpr uint8_t I2C_SDA = 12U, I2C_SCL = 13U;
+  #define I2C_BUS Wire
+  constexpr uint8_t I2C_SDA = 24U, I2C_SCL = 25U;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
@@ -12,6 +20,7 @@
   #error "Use ESP32 or RP2040/RP2350"
 #endif
 
+constexpr uint32_t I2C_FREQ = 400000;
 constexpr uint8_t SENSOR_ADDRESS = 0x20;
 constexpr uint32_t READ_INTERVAL_MS = 1000U;
 
@@ -22,12 +31,10 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-#if defined(ARDUINO_ARCH_RP2040)
-  I2C_BUS.setSDA(I2C_SDA); I2C_BUS.setSCL(I2C_SCL); I2C_BUS.begin();
-#else
-  I2C_BUS.begin(I2C_SDA, I2C_SCL);
-#endif
-  I2C_BUS.setClock(400000);
+  if (!devlabBeginI2cBusRecovered(I2C_BUS, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+    Serial.println("ERROR: I2C bus is blocked");
+    return;
+  }
 
   DevLabDDP::DeviceInfo info;
   deviceVerified = master.matchesExpectedDevice(SENSOR_ADDRESS, &info);
