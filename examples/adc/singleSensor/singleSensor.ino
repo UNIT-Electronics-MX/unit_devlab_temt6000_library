@@ -8,30 +8,35 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
-#include <DevLabI2CBusRecovery.h>
-
+#include <DevLab_I2C_Orchestrator.h>
+constexpr uint32_t I2C_FREQ = 400000;
+constexpr uint8_t SENSOR_ADDRESS = 0x20;
+constexpr uint32_t READ_INTERVAL_MS = 1000U;
 #if defined(ARDUINO_ARCH_RP2040)
+
   #define I2C_BUS Wire
+  DevLab_I2C_Orchestrator bus(Wire, I2C_FREQ);
   constexpr uint8_t I2C_SDA = 24U, I2C_SCL = 25U;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
+  DevLab_I2C_Orchestrator bus(Wire, I2C_FREQ);
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
 #else
   #error "Use ESP32 or RP2040/RP2350"
 #endif
 
-constexpr uint32_t I2C_FREQ = 400000;
-constexpr uint8_t SENSOR_ADDRESS = 0x20;
-constexpr uint32_t READ_INTERVAL_MS = 1000U;
 
-DevLabDDP::Master master(I2C_BUS, DevLabDDP::DEVICE_TEMT6000);
+
+
+
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 
 void setup() {
   Serial.begin(115200);
   delay(500);
 
-  if (!devlabBeginI2cBusRecovered(I2C_BUS, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+  if (!bus.beginRecovered(I2C_SDA, I2C_SCL, 20000, false)) {
     Serial.println("ERROR: I2C bus is blocked");
     return;
   }

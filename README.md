@@ -168,7 +168,7 @@ DevLab_TEMT6000/
 | Parameter | Value |
 |---|---|
 | Library Name | DevLab_TEMT6000 |
-| Version | 1.0.0 |
+| Version | 2.0.0 |
 | Communication | I2C/SPI|
 | Architecture | Cross-platform |
 
