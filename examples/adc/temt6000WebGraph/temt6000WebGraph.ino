@@ -11,7 +11,7 @@
 #include <WiFi.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
-#include <DevLabI2CBusRecovery.h>
+#include <DevLab_I2C_Orchestrator.h>
 
 #if !defined(ARDUINO_ARCH_ESP32)
   #error "temt6000WebGraph requires an ESP32"
@@ -38,7 +38,8 @@ static_assert(
     "SENSOR_AVERAGING_SAMPLES must be 4, 8, 16 or 24");
 
 WebServer webServer(80);
-DevLabDDP::Master master(I2C_BUS, DevLabDDP::DEVICE_TEMT6000);
+DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQUENCY_HZ);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 uint16_t latestSensorValue = 0;
 bool latestSensorValueValid = false;
@@ -168,43 +169,25 @@ void waitForCommandInterval()
   }
 }
 
-uint8_t sendCommandByte(uint8_t command)
-{
-  waitForCommandInterval();
-  I2C_BUS.beginTransmission(STARTUP_I2C_ADDRESS);
-  I2C_BUS.write(command);
-  uint8_t error = I2C_BUS.endTransmission();
-  lastCommandMs = millis();
-  commandWasSent = true;
-  return error;
-}
-
-bool readResponseByte(uint8_t &response)
-{
-  delay(10);
-  if (I2C_BUS.requestFrom(STARTUP_I2C_ADDRESS, (uint8_t)1) != 1) {
-    while (I2C_BUS.available()) I2C_BUS.read();
-    return false;
-  }
-  response = I2C_BUS.read();
-  return true;
-}
-
 bool readAveragingConfiguration(uint8_t &sampleCount)
 {
-  if (sendCommandByte(CMD_GET_ADC_AVERAGING) != 0 || !readResponseByte(sampleCount)) {
-    return false;
-  }
+  waitForCommandInterval();
+  bool ok = bus.transact(STARTUP_I2C_ADDRESS, CMD_GET_ADC_AVERAGING, &sampleCount, 1U, 10U);
+  lastCommandMs = millis();
+  commandWasSent = true;
+  if (!ok) return false;
   return sampleCount == 4 || sampleCount == 8 ||
          sampleCount == 16 || sampleCount == 24;
 }
 
 bool sendAveragingConfigurationByte(uint8_t value)
 {
-  if (sendCommandByte(value) != 0) return false;
+  waitForCommandInterval();
   uint8_t response = 0xFF;
-  return readResponseByte(response) &&
-         (response & 0x0F) == RESP_ADC_AVERAGING_SET;
+  bool ok = bus.transact(STARTUP_I2C_ADDRESS, value, &response, 1U, 10U);
+  lastCommandMs = millis();
+  commandWasSent = true;
+  return ok && (response & 0x0F) == RESP_ADC_AVERAGING_SET;
 }
 
 bool configureSensorAveraging()
@@ -249,9 +232,7 @@ void setup()
   Serial.begin(115200);
   delay(500);
 
-  bool i2cBusOk = devlabBeginI2cBusRecovered(
-      I2C_BUS, I2C_SDA_PIN, I2C_SCL_PIN,
-      I2C_FREQUENCY_HZ, 100);
+  bool i2cBusOk = bus.beginRecovered(I2C_SDA_PIN, I2C_SCL_PIN, 20000, false);
   if (!i2cBusOk) {
     Serial.println("Error: I2C bus is blocked");
   }

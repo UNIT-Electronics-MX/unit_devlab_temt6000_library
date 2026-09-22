@@ -9,17 +9,16 @@
 #include <Wire.h>
 #include <DevLabDDP.h>
 #include <DevLab_I2C_Orchestrator.h>
+
 constexpr uint32_t I2C_FREQ = 400000;
 constexpr uint8_t SENSOR_ADDRESS = 0x20;
 constexpr uint32_t READ_INTERVAL_MS = 1000U;
-#if defined(ARDUINO_ARCH_RP2040)
 
+#if defined(ARDUINO_ARCH_RP2040)
   #define I2C_BUS Wire
-  DevLab_I2C_Orchestrator bus(Wire, I2C_FREQ);
   constexpr uint8_t I2C_SDA = 24U, I2C_SCL = 25U;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
-  DevLab_I2C_Orchestrator bus(Wire, I2C_FREQ);
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
 #else
   #error "Use ESP32 or RP2040/RP2350"
@@ -28,7 +27,7 @@ constexpr uint32_t READ_INTERVAL_MS = 1000U;
 
 
 
-
+DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQ);
 DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 

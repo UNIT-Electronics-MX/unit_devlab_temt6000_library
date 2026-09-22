@@ -17,5 +17,5 @@ scan
 change 20 30
 ```
 
-ESP32 uses SDA GPIO6 and SCL GPIO7. RP2040/RP2350 uses `Wire1`, SDA GPIO12
-and SCL GPIO13. Compile every Arduino example with `make examples-check`.
+ESP32 uses `Wire`, SDA GPIO6 and SCL GPIO7. RP2040/RP2350 uses `Wire`, SDA
+GPIO24 and SCL GPIO25.

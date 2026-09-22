@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
-#include <DevLabI2CBusRecovery.h>
+#include <DevLab_I2C_Orchestrator.h>
 
 #if defined(ARDUINO_ARCH_RP2040)
   #define I2C_BUS Wire
@@ -22,7 +22,8 @@
 
 constexpr uint32_t I2C_FREQ = 400000;     //Change to 100000 for slower devices
 constexpr uint16_t EXPECTED_DEVICE_ID = DevLabDDP::DEVICE_TEMT6000;
-DevLabDDP::Master master(I2C_BUS, EXPECTED_DEVICE_ID);
+DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQ);
+DevLabDDP::Master master(bus, EXPECTED_DEVICE_ID);
 String inputLine;
 
 bool parseAddress(const String &text, uint8_t &address) {
@@ -132,7 +133,7 @@ void setup() {
   }
   delay(500);
 
-  if (!devlabBeginI2cBusRecovered(I2C_BUS, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+  if (!bus.beginRecovered(I2C_SDA, I2C_SCL, 20000, false)) {
     Serial.println("ERROR: I2C bus is blocked");
     while (true) {
       delay(1000);

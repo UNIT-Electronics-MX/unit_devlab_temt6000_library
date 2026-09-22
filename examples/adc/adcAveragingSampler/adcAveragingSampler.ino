@@ -18,7 +18,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
-#include <DevLabI2CBusRecovery.h>
+#include <DevLab_I2C_Orchestrator.h>
 
 #if defined(ARDUINO_ARCH_RP2040)
   #define I2C_BUS Wire
@@ -41,7 +41,8 @@ constexpr uint8_t ADC_AVERAGING_SAMPLES = 8U;
  * (firmware/src/main.c: ADC_SAMPLE_INTERVAL_MS). Keep both in sync. */
 constexpr uint32_t ADC_SAMPLE_INTERVAL_MS = 20U;
 
-DevLabDDP::Master master(I2C_BUS, DevLabDDP::DEVICE_TEMT6000);
+DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQ);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 
 /* CMD_SET_ADC_AVERAGING is a two-step handshake: the command byte is
@@ -57,11 +58,10 @@ bool setAdcAveraging(uint8_t address, uint8_t sampleCount) {
       (ack & 0x0FU) != RESP_ADC_AVERAGING_SET) {
     return false;
   }
-  if (!master.writeByte(address, sampleCount)) return false;
-  delay(20U);
-  uint8_t received = I2C_BUS.requestFrom(address, (uint8_t)1U);
-  if (received != 1U) return false;
-  if ((I2C_BUS.read() & 0x0FU) != RESP_ADC_AVERAGING_SET) return false;
+  if (!bus.transact(address, sampleCount, &ack, 1U, 20U) ||
+      (ack & 0x0FU) != RESP_ADC_AVERAGING_SET) {
+    return false;
+  }
 
   delay((uint32_t)sampleCount * ADC_SAMPLE_INTERVAL_MS);
   return true;
@@ -84,7 +84,7 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  if (!devlabBeginI2cBusRecovered(I2C_BUS, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+  if (!bus.beginRecovered(I2C_SDA, I2C_SCL, 20000, false)) {
     Serial.println("ERROR: I2C bus is blocked");
     return;
   }

@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <DevLabDDP.h>
-#include <DevLabI2CBusRecovery.h>
+#include <DevLab_I2C_Orchestrator.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -44,7 +44,8 @@ constexpr uint16_t GRAPH_ADC_MIDDLE =
 constexpr uint32_t SAMPLE_INTERVAL_MS = 50;
 
 Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &WIRE, -1);
-DevLabDDP::Master master(WIRE, DevLabDDP::DEVICE_TEMT6000);
+DevLab_I2C_Orchestrator bus(WIRE, I2C_FREQ);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 uint16_t samples[GRAPH_WIDTH] = {0};
 uint16_t last_value = 0;
@@ -133,7 +134,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  if (!devlabBeginI2cBusRecovered(WIRE, I2C_SDA, I2C_SCL, I2C_FREQ, 100)) {
+  if (!bus.beginRecovered(I2C_SDA, I2C_SCL, 20000, false)) {
     Serial.println("Error: I2C bus is blocked");
     while (true) {
       delay(1000);
