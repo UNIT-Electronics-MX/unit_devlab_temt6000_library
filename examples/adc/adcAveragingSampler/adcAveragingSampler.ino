@@ -22,15 +22,23 @@
 
 #if defined(ARDUINO_ARCH_RP2040)
   #define I2C_BUS Wire
+  constexpr uint32_t I2C_FREQ = 400000;
   constexpr uint8_t I2C_SDA = 24U, I2C_SCL = 25U;
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
+  constexpr uint32_t I2C_FREQ = 400000;
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
+#elif defined(ARDUINO_ARCH_STM32)
+  #define I2C_BUS Wire
+  constexpr uint32_t I2C_FREQ = 400000;  // baja a 100000 si tu wiring no sostiene 400kHz (Blue Pill)
+  // STM32duino: los pines dependen del paquete/placa.
+  // Ejemplo típico para Blue Pill (F103C8T6):
+  constexpr uint8_t I2C_SDA = PB7, I2C_SCL = PB6;
+  // Otras placas STM32 pueden usar PB9/PB8, o PA10/PA9, etc.
 #else
-  #error "Use ESP32 or RP2040/RP2350"
+  #error "Use ESP32, RP2040/RP2350 o STM32"
 #endif
 
-constexpr uint32_t I2C_FREQ = 400000;
 constexpr uint8_t SENSOR_ADDRESS = 0x20U;
 constexpr uint32_t READ_INTERVAL_MS = 100U;
 /* Device-side moving-average window (firmware only accepts 1, 4, 8, 16 or 24).

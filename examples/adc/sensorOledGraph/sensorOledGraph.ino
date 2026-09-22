@@ -21,8 +21,15 @@
   #define WIRE Wire
   constexpr uint8_t I2C_SDA = 6;
   constexpr uint8_t I2C_SCL = 7;
+#elif defined(ARDUINO_ARCH_STM32)
+  #define WIRE Wire
+  // STM32duino: los pines dependen del paquete/placa.
+  // Ejemplo típico para Blue Pill (F103C8T6):
+  constexpr uint8_t I2C_SDA = PB7;
+  constexpr uint8_t I2C_SCL = PB6;
+  // Otras placas STM32 pueden usar PB9/PB8, o PA10/PA9, etc.
 #else
-  #error "Use ESP32 or RP2040/RP2350, or define the I2C pins for your master"
+  #error "Use ESP32, RP2040/RP2350 o STM32, o define los pines I2C para tu placa"
 #endif
 
 constexpr uint32_t I2C_FREQ = 100000;

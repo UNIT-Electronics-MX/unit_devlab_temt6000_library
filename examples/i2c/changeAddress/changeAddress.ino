@@ -16,8 +16,14 @@
 #elif defined(ARDUINO_ARCH_ESP32)
   #define I2C_BUS Wire
   constexpr uint8_t I2C_SDA = 6U, I2C_SCL = 7U;
+#elif defined(ARDUINO_ARCH_STM32)
+  #define I2C_BUS Wire
+  // STM32duino: los pines dependen del paquete/placa.
+  // Ejemplo típico para Blue Pill (F103C8T6):
+  constexpr uint8_t I2C_SDA = PB7, I2C_SCL = PB6;
+  // Otras placas STM32 pueden usar PB9/PB8, o PA10/PA9, etc.
 #else
-  #error "Use ESP32 or RP2040/RP2350"
+  #error "Use ESP32, RP2040/RP2350 o STM32"
 #endif
 
 constexpr uint32_t I2C_FREQ = 400000;     //Change to 100000 for slower devices
@@ -46,11 +52,17 @@ void scanBus() {
   bool found = false;
   Serial.println("Address  Sensor");
   for (uint8_t address = 0x08U; address <= 0x77U; ++address) {
-    // DDP devices only ACK once a real command byte is written, so a
-    // zero-byte ping() alone can miss them; try identify() first.
+    // ping() first: a zero-byte probe, cheap and safe to repeat across every
+    // address (STM32's I2C driver routes it through a dedicated bus-scan
+    // path). identify() writes a real command byte, which some cores'
+    // interrupt-driven transfer path can leave in an error state after a
+    // NACK - calling it against ~100+ empty addresses on every scan was
+    // wedging the bus before reaching a real device. Some DDP devices only
+    // ACK once a real command byte is written, so ping() alone can still
+    // miss them; identify() only runs once ping() already got an ACK.
+    if (!master.ping(address)) continue;
     DevLabDDP::DeviceInfo info;
     bool isDdp = master.identify(address, info);
-    if (!isDdp && !master.ping(address)) continue;
     found = true;
     printHexAddress(address);
     Serial.print("     ");
@@ -131,7 +143,7 @@ void setup() {
   while (!Serial) {
     delay(10);
   }
-  delay(500);
+  delay(1000);
 
   if (!bus.beginRecovered(I2C_SDA, I2C_SCL, 20000, false)) {
     Serial.println("ERROR: I2C bus is blocked");
