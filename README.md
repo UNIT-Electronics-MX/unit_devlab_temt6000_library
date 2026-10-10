@@ -16,7 +16,8 @@ Compatible with ESP32 and RP2040/RP2350 boards.
 
 # Features
 
-- Device discovery and identity verification (device ID `0x0102`) before any read
+- Device discovery and DDP protocol verification at the configured I2C address,
+  without requiring device ID `0x0102`
 - Raw ADC0 light reading (12-bit, 0-4095) via the DDP command/response protocol
 - Configurable on-device moving-average window (1, 4, 8, 16 or 24 samples)
 - Runtime I2C address scanning and reassignment (no fixed address required)
@@ -67,7 +68,7 @@ constexpr uint8_t I2C_SDA = 6;   // ESP32: 6/7. RP2040/RP2350: 24/25.
 constexpr uint8_t I2C_SCL = 7;
 
 DevLab_I2C_Orchestrator bus(Wire, I2C_FREQ);
-DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_ANY);
 bool deviceVerified = false;
 
 void setup() {
@@ -82,7 +83,7 @@ void setup() {
   DevLabDDP::DeviceInfo info;
   deviceVerified = master.matchesExpectedDevice(SENSOR_ADDRESS, &info);
   if (!deviceVerified) {
-    Serial.println("ERROR: address is not a DDP TEMT6000 (ID 0x0102)");
+    Serial.println("ERROR: address does not contain a compatible DDP device");
   }
 }
 
@@ -130,8 +131,10 @@ and reassign it at runtime through the DDP protocol.
 
 # Notes
 
-- The TEMT6000 DDP node reports device ID `0x0102`; `matchesExpectedDevice()`
-  rejects any other device found at the configured address.
+- TEMT6000 examples use `DevLabDDP::DEVICE_ANY`, so they do not reject the
+  configured address when its device ID differs from `0x0102`. They still
+  verify that the device speaks the DDP protocol. The firmware at that address
+  must support the ADC and averaging commands used by the selected example.
 - ADC reads (`CMD_READ_ADC0`) return the device's background-averaged value,
   not a raw instantaneous sample - the moving-average window
   (`CMD_SET_ADC_AVERAGING` / `CMD_GET_ADC_AVERAGING`) only changes how many
@@ -169,7 +172,7 @@ DevLab_TEMT6000/
 | Parameter | Value |
 |---|---|
 | Library Name | DevLab_TEMT6000 |
-| Version | 2.0.1 |
+| Version | 2.0.3 |
 | Communication | I2C |
 | Architecture | Cross-platform |
 | Dependencies | DevLabDDP, DevLab_Interface |

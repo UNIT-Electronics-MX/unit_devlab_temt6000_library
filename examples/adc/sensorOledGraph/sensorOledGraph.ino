@@ -52,7 +52,7 @@ constexpr uint32_t SAMPLE_INTERVAL_MS = 50;
 
 Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &WIRE, -1);
 DevLab_I2C_Orchestrator bus(WIRE, I2C_FREQ);
-DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_ANY);
 bool deviceVerified = false;
 uint16_t samples[GRAPH_WIDTH] = {0};
 uint16_t last_value = 0;
@@ -160,7 +160,7 @@ void setup()
   DevLabDDP::DeviceInfo info;
   deviceVerified = master.matchesExpectedDevice(STARTUP_I2C_ADDRESS, &info);
   if (!deviceVerified) {
-    Serial.println("The address does not contain a TEMT6000 DDP device (ID 0x0102)");
+    Serial.println("The address does not contain a compatible DDP device");
   }
   display.clearDisplay();
   display.display();

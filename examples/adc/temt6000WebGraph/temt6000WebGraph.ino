@@ -39,7 +39,7 @@ static_assert(
 
 WebServer webServer(80);
 DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQUENCY_HZ);
-DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_ANY);
 bool deviceVerified = false;
 uint16_t latestSensorValue = 0;
 bool latestSensorValueValid = false;
@@ -240,7 +240,7 @@ void setup()
   DevLabDDP::DeviceInfo info;
   deviceVerified = i2cBusOk && master.matchesExpectedDevice(STARTUP_I2C_ADDRESS, &info);
   if (!deviceVerified) {
-    Serial.println("Error: address is not a DDP TEMT6000 (ID 0x0102)");
+    Serial.println("Error: address does not contain a compatible DDP device");
   }
 
   if (deviceVerified && configureSensorAveraging()) {

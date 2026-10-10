@@ -41,7 +41,7 @@ constexpr uint32_t READ_INTERVAL_MS = 1000U;
 
 
 DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQ);
-DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_ANY);
 bool deviceVerified = false;
 
 void setup() {
@@ -59,7 +59,7 @@ void setup() {
   deviceVerified = master.matchesExpectedDevice(SENSOR_ADDRESS, &info);
 
   if (!deviceVerified) {
-    Serial.println("ERROR: address is not a DDP TEMT6000 (ID 0x0102)");
+    Serial.println("ERROR: address does not contain a compatible DDP device");
     return;
   }
 
@@ -67,7 +67,7 @@ void setup() {
       Serial,
       SENSOR_ADDRESS,
       info,
-      DevLabDDP::DEVICE_TEMT6000);
+      DevLabDDP::DEVICE_ANY);
 
   Serial.println("adc0_raw");
 }
