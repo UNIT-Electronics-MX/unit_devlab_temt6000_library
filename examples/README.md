@@ -8,11 +8,10 @@
 | `adc/temt6000WebGraph` | Display a web graph from an ESP32. |
 | `i2c/changeAddress` | Interactively change the address of a TEMT6000 DDP node. |
 
-The examples accept any DDP device ID at the configured address instead of
-requiring `0x0102`. They still verify that the device speaks DDP and supports
-the commands used by each example. The address example scans the bus at
-startup without modifying any device and scans again after a successful
-address change.
+The examples accept both TEMT6000 device IDs: production `0x0102` and legacy
+factory-batch `0x0002`. Other DDP device IDs are rejected. The address example
+scans the bus at startup without modifying any device and scans again after a
+successful address change.
 Open Serial at 115200 baud and enter, for example:
 
 ```text

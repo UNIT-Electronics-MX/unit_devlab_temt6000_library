@@ -27,7 +27,7 @@
 #endif
 
 constexpr uint32_t I2C_FREQ = 400000;     //Change to 100000 for slower devices
-constexpr uint16_t EXPECTED_DEVICE_ID = DevLabDDP::DEVICE_ANY;
+constexpr uint16_t EXPECTED_DEVICE_ID = DevLabDDP::DEVICE_TEMT6000;
 DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQ);
 DevLabDDP::Master master(bus, EXPECTED_DEVICE_ID);
 String inputLine;
@@ -112,7 +112,7 @@ void processCommand(String line) {
 
   DevLabDDP::DeviceInfo info;
   if (!master.matchesExpectedDevice(oldAddress, &info)) {
-    Serial.println("ERROR current address does not contain a compatible DDP device");
+    Serial.println("ERROR current address does not contain a supported TEMT6000");
     return;
   }
   DevLabDDP::DeviceInfo unused;
@@ -152,7 +152,7 @@ void setup() {
     }
   }
 
-  Serial.println("Accepting any DDP device ID");
+  Serial.println("Accepting TEMT6000 IDs 0x0002 and 0x0102");
 
   printHelp();
   scanBus();

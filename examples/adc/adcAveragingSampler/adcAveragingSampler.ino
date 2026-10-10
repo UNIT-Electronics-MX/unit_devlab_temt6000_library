@@ -50,7 +50,7 @@ constexpr uint8_t ADC_AVERAGING_SAMPLES = 8U;
 constexpr uint32_t ADC_SAMPLE_INTERVAL_MS = 20U;
 
 DevLab_I2C_Orchestrator bus(I2C_BUS, I2C_FREQ);
-DevLabDDP::Master master(bus, DevLabDDP::DEVICE_ANY);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 
 /* CMD_SET_ADC_AVERAGING is a two-step handshake: the command byte is
@@ -100,11 +100,11 @@ void setup() {
   DevLabDDP::DeviceInfo info;
   deviceVerified = master.matchesExpectedDevice(SENSOR_ADDRESS, &info);
   if (!deviceVerified) {
-    Serial.println("ERROR: address does not contain a compatible DDP device");
+    Serial.println("ERROR: address does not contain a supported TEMT6000");
     return;
   }
   DevLabDDP::printDeviceInfo(
-      Serial, SENSOR_ADDRESS, info, DevLabDDP::DEVICE_ANY);
+      Serial, SENSOR_ADDRESS, info, DevLabDDP::DEVICE_TEMT6000);
 
   if (!setAdcAveraging(SENSOR_ADDRESS, ADC_AVERAGING_SAMPLES)) {
     Serial.println("WARN: could not set ADC averaging, using device default");

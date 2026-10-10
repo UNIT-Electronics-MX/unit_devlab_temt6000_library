@@ -16,8 +16,8 @@ Compatible with ESP32 and RP2040/RP2350 boards.
 
 # Features
 
-- Device discovery and DDP protocol verification at the configured I2C address,
-  without requiring device ID `0x0102`
+- Device discovery and TEMT6000 identity verification at the configured I2C
+  address, accepting production ID `0x0102` and legacy ID `0x0002`
 - Raw ADC0 light reading (12-bit, 0-4095) via the DDP command/response protocol
 - Configurable on-device moving-average window (1, 4, 8, 16 or 24 samples)
 - Runtime I2C address scanning and reassignment (no fixed address required)
@@ -68,7 +68,7 @@ constexpr uint8_t I2C_SDA = 6;   // ESP32: 6/7. RP2040/RP2350: 24/25.
 constexpr uint8_t I2C_SCL = 7;
 
 DevLab_I2C_Orchestrator bus(Wire, I2C_FREQ);
-DevLabDDP::Master master(bus, DevLabDDP::DEVICE_ANY);
+DevLabDDP::Master master(bus, DevLabDDP::DEVICE_TEMT6000);
 bool deviceVerified = false;
 
 void setup() {
@@ -83,7 +83,7 @@ void setup() {
   DevLabDDP::DeviceInfo info;
   deviceVerified = master.matchesExpectedDevice(SENSOR_ADDRESS, &info);
   if (!deviceVerified) {
-    Serial.println("ERROR: address does not contain a compatible DDP device");
+    Serial.println("ERROR: address does not contain a supported TEMT6000");
   }
 }
 
@@ -131,10 +131,10 @@ and reassign it at runtime through the DDP protocol.
 
 # Notes
 
-- TEMT6000 examples use `DevLabDDP::DEVICE_ANY`, so they do not reject the
-  configured address when its device ID differs from `0x0102`. They still
-  verify that the device speaks the DDP protocol. The firmware at that address
-  must support the ADC and averaging commands used by the selected example.
+- TEMT6000 examples use `DevLabDDP::DEVICE_TEMT6000`. DevLabDDP 1.0.6 and
+  newer recognize both the production device ID `0x0102` and the legacy
+  factory-batch ID `0x0002` as TEMT6000 devices. Other DDP device IDs remain
+  rejected.
 - ADC reads (`CMD_READ_ADC0`) return the device's background-averaged value,
   not a raw instantaneous sample - the moving-average window
   (`CMD_SET_ADC_AVERAGING` / `CMD_GET_ADC_AVERAGING`) only changes how many
@@ -172,7 +172,7 @@ DevLab_TEMT6000/
 | Parameter | Value |
 |---|---|
 | Library Name | DevLab_TEMT6000 |
-| Version | 2.0.3 |
+| Version | 2.0.4 |
 | Communication | I2C |
 | Architecture | Cross-platform |
 | Dependencies | DevLabDDP, DevLab_Interface |
